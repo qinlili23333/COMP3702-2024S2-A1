@@ -46,8 +46,6 @@ class Solver:
             if visited.get(state):
                 if visited[state] > cost:
                     visited[state]=cost
-                else:
-                    continue
             else:
                 self.loop_counter.inc()
                 visited[state]=cost
@@ -81,22 +79,22 @@ class Solver:
         :param state: given state (GameState object)
         :return a real number h(n)
         """
-
-        #
-        #
-        # TODO: Implement your heuristic function for A* search here.
-        #
-        # You should call this method from your solve_a_star method (e.g. every time you need to compute a heuristic
-        # value for a state).
         widget_cells = [widget_get_occupied_cells(self.environment.widget_types[i], state.widget_centres[i],state.widget_orients[i]) for i in range(self.environment.n_widgets)]
-        value = len(self.environment.target_list)
+        value = 0
+        max_distance = 0
         for tgt in self.environment.target_list:
             # loop over all widgets to find a match
             for i in range(self.environment.n_widgets):
-                if tgt in widget_cells[i]:
+                if tgt not in widget_cells[i]:
                     # match found
-                    value -= 1
-        print(value)
+                    value += 1.5
+        for wd in state.widget_centres:
+            x=abs(wd[0]-state.BEE_posit[0])
+            y=abs(wd[1]-state.BEE_posit[1])
+            distance = x+y-1
+            if distance > max_distance:
+                max_distance = distance
+        value += max_distance
         return value
 
     def solve_a_star(self):
@@ -104,25 +102,26 @@ class Solver:
         Find a path which solves the environment using A* search.
         :return: path (list of actions, where each action is an element of BEE_ACTIONS)
         """
-        queue = [(self.compute_heuristic(self.environment.get_init_state()),[],self.environment.get_init_state())]
+        # Data format: tuple (cost+heuristic,cost,history_actions,state)
+        queue = [(self.compute_heuristic(self.environment.get_init_state()),0,[],self.environment.get_init_state())]
         visited = {}
         heapify(queue)
         while len(queue):
             # print(queue[0][2]
-            cost, history_actions, state = heappop(queue)
+            totalcost,cost, history_actions, state = heappop(queue)
+            if self.environment.is_solved(state):
+                print(history_actions)
+                return history_actions
             # Check visited & cost check
-            self.loop_counter.inc()
-            visited[state]=cost
-            for next_state in state.get_successor():
-                if next_state[0]:
-                    if self.environment.is_solved(next_state[2]):
-                        return history_actions + [next_state[3]]
-                    if visited.get(next_state[2]):
-                        if visited[next_state[2]] > next_state[0]:
-                            visited[next_state[2]]=next_state[0]
-                    else:
-                        visited[next_state[2]]=next_state[0]
-                        heappush(queue,(self.compute_heuristic(next_state[2]),history_actions + [next_state[3]],next_state[2]))
+            if visited.get(state):
+                if visited[state] > cost:
+                    visited[state]=cost
+            else:
+                self.loop_counter.inc()
+                visited[state]=cost
+                for next_state in state.get_successor():
+                    newcost=cost + next_state[1]
+                    heappush(queue,(self.compute_heuristic(next_state[2])+newcost,newcost,history_actions + [next_state[3]],next_state[2]))
         pass
 
     #
