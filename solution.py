@@ -4,6 +4,7 @@ from environment import *
 from state import State
 import heapq
 import math
+import functools
 
 """
 solution.py
@@ -71,6 +72,7 @@ class Solver:
         #
 
         pass
+    
 
     def compute_heuristic(self, state):
         """
@@ -78,17 +80,7 @@ class Solver:
         :param state: given state (GameState object)
         :return a real number h(n)
         """
-        value = 0
-        for widget in state.widget_centres:
-            if widget in self.environment.target_list:
-                continue
-            min_dist = 99
-            for target in self.environment.target_list:
-                min_dist = min(min_dist,abs(widget[0]-target[0])+abs(widget[1]-target[1]))
-            value += 1.5*min_dist
-        for wd in state.widget_centres:
-            value += math.dist(wd,state.BEE_posit)
-        return value
+        return cached_heuristic(self.environment,state.widget_centres,state.BEE_posit)
 
     def solve_a_star(self):
         """
@@ -119,4 +111,16 @@ class Solver:
     #
     # TODO: Add any additional methods here
     #
-    #
+@functools.cache
+def cached_heuristic(environment,widget_centres,BEE_posit):
+    value = 0
+    for widget in widget_centres:
+        if widget in environment.target_list:
+            continue
+        min_dist = 99
+        for target in environment.target_list:
+            min_dist = min(min_dist,abs(widget[0]-target[0])+abs(widget[1]-target[1]))
+        value += 1.5*min_dist
+    for wd in widget_centres:
+        value += math.dist(wd,BEE_posit)
+    return value
