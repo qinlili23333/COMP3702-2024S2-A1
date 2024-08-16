@@ -2,7 +2,8 @@ import sys
 from constants import *
 from environment import *
 from state import State
-from heapq import *
+import heapq
+import math
 
 """
 solution.py
@@ -35,11 +36,10 @@ class Solver:
         # Data format: tuple (cost,history_actions,state)
         queue = [(0,[],self.environment.get_init_state())]
         visited = {}
-        heapify(queue)
+        heapq.heapify(queue)
         while len(queue):
-            cost, history_actions, state = heappop(queue)
+            cost, history_actions, state = heapq.heappop(queue)
             if state.widget_centres[0] in self.environment.target_list and self.environment.is_solved(state):
-                print(history_actions)
                 return history_actions
             # Check visited & cost check
             if visited.get(state):
@@ -49,7 +49,7 @@ class Solver:
                 self.loop_counter.inc()
                 visited[state]=cost
                 for next_state in state.get_successor():
-                    heappush(queue,(cost + next_state[1],history_actions + [next_state[3]],next_state[2]))
+                    heapq.heappush(queue,(cost + next_state[1],history_actions + [next_state[3]],next_state[2]))
                         
         pass
 
@@ -78,27 +78,16 @@ class Solver:
         :param state: given state (GameState object)
         :return a real number h(n)
         """
-        widget_cells = [widget_get_occupied_cells(self.environment.widget_types[i], state.widget_centres[i],state.widget_orients[i]) for i in range(self.environment.n_widgets)]
-        value = 1.5*len(self.environment.target_list)
-        max_distance = 0
-        min_distance = 100
-        for tgt in self.environment.target_list:
-            # loop over all widgets to find a match
-            for i in range(self.environment.n_widgets):
-                if tgt in widget_cells[i]:
-                    # match found
-                    value -= 1.5
-                    break
+        value = 0
+        for widget in state.widget_centres:
+            if widget in self.environment.target_list:
+                continue
+            min_dist = 99
+            for target in self.environment.target_list:
+                min_dist = min(min_dist,abs(widget[0]-target[0])+abs(widget[1]-target[1]))
+            value += 1.5*min_dist
         for wd in state.widget_centres:
-            distance = abs(wd[0]-state.BEE_posit[0])+abs(wd[1]-state.BEE_posit[1])-1
-            if distance > max_distance:
-                max_distance = distance
-            if distance < min_distance:
-                min_distance = distance
-        if max_distance==min_distance:
-            value += max_distance
-        else:
-            value += max_distance+min_distance
+            value += math.dist(wd,state.BEE_posit)
         return value
 
     def solve_a_star(self):
@@ -109,11 +98,10 @@ class Solver:
         # Data format: tuple (cost+heuristic,history_actions,cost,state)
         queue = [(self.compute_heuristic(self.environment.get_init_state()),[],0,self.environment.get_init_state())]
         visited = {}
-        heapify(queue)
+        heapq.heapify(queue)
         while len(queue):
-            totalcost,history_actions,cost, state = heappop(queue)
+            totalcost,history_actions,cost, state = heapq.heappop(queue)
             if state.widget_centres[0] in self.environment.target_list and self.environment.is_solved(state):
-                print(history_actions)
                 return history_actions
             # Check visited & cost check
             if visited.get(state):
@@ -124,7 +112,7 @@ class Solver:
                 visited[state]=cost
                 for next_state in state.get_successor():
                     newcost=cost + next_state[1]
-                    heappush(queue,(self.compute_heuristic(next_state[2])+newcost,history_actions + [next_state[3]],newcost,next_state[2]))
+                    heapq.heappush(queue,(self.compute_heuristic(next_state[2])+newcost,history_actions + [next_state[3]],newcost,next_state[2]))
         pass
 
     #
