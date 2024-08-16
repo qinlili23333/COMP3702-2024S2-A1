@@ -38,7 +38,7 @@ class Solver:
         heapify(queue)
         while len(queue):
             cost, history_actions, state = heappop(queue)
-            if self.environment.is_solved(state):
+            if state.widget_centres[0] in self.environment.target_list and self.environment.is_solved(state):
                 print(history_actions)
                 return history_actions
             # Check visited & cost check
@@ -112,7 +112,7 @@ class Solver:
         heapify(queue)
         while len(queue):
             totalcost,history_actions,cost, state = heappop(queue)
-            if self.environment.is_solved(state):
+            if state.widget_centres[0] in self.environment.target_list and self.environment.is_solved(state):
                 print(history_actions)
                 return history_actions
             # Check visited & cost check
