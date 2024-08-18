@@ -68,7 +68,7 @@ class State:
     def deepcopy(self):
         return State(self.environment, self.BEE_posit, self.BEE_orient, self.widget_centres, self.widget_orients,
                      force_valid=self.force_valid)
-        
+    
     def get_successor(self):
         """
         Get all successors of the current state
@@ -76,7 +76,7 @@ class State:
         """
         successors = []
         for action in BEE_ACTIONS:
-            new_state = self.environment.perform_action(self.deepcopy(), action)
+            new_state = self.environment.perform_action(self, action)
             if(new_state[0]):
                 successors.append(new_state+(action,))
         return successors

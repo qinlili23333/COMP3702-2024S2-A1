@@ -91,7 +91,7 @@ class Solver:
         queue = [(self.compute_heuristic(self.environment.get_init_state()),[],0,self.environment.get_init_state())]
         visited = {}
         heapq.heapify(queue)
-        while len(queue):
+        while True:
             totalcost,history_actions,cost, state = heapq.heappop(queue)
             if cached_solved(self.environment,state.widget_centres,state.widget_orients):
                 return history_actions
@@ -129,16 +129,83 @@ def cached_heuristic(environment,widget_centres,BEE_posit):
 def cached_solved(environment,widget_centres,widget_orients):
     if widget_centres[0] not in environment.target_list:
         return False
-    widget_cells = [widget_get_occupied_cells(environment.widget_types[i], widget_centres[i],
-                                                widget_orients[i]) for i in range(environment.n_widgets)]
-    env_solved = True
+    widget_cells = []
+    for i in range(environment.n_widgets):
+        widget_cells+=cached_widget_get_occupied_cells(environment.widget_types[i], widget_centres[i],
+                                                widget_orients[i])
     for tgt in environment.target_list:
-        tgt_solved = False
-        for i in range(environment.n_widgets):
-            if tgt in widget_cells[i]:
-                tgt_solved = True
-                break
-        if not tgt_solved:
-            env_solved = False
-            break
-    return env_solved
+        if tgt not in widget_cells:
+            return False
+    return True
+
+@functools.cache
+def cached_widget_get_occupied_cells(w_type, centre, orient):
+    """
+    Return a list of cell coordinates which are occupied by this widget (useful for checking if the widget is in
+    collision and how the widget should move if pushed or pulled by the BEE).
+
+    :param w_type: widget type
+    :param centre: centre point of the widget
+    :param orient: orientation of the widget
+    :return: [(r, c) for each cell]
+    """
+    occupied = [centre]
+    cr, cc = centre
+
+    # cell in UP direction
+    if ((w_type == WIDGET3 and orient == VERTICAL) or
+            (w_type == WIDGET4 and orient == UP) or
+            (w_type == WIDGET5 and (orient == SLANT_LEFT or orient == SLANT_RIGHT))):
+        occupied.append((cr - 1, cc))
+
+    # cell in DOWN direction
+    if ((w_type == WIDGET3 and orient == VERTICAL) or
+            (w_type == WIDGET4 and orient == DOWN) or
+            (w_type == WIDGET5 and (orient == SLANT_LEFT or orient == SLANT_RIGHT))):
+        occupied.append((cr + 1, cc))
+
+    # cell in UP_LEFT direction
+    if ((w_type == WIDGET3 and orient == SLANT_LEFT) or
+            (w_type == WIDGET4 and orient == DOWN) or
+            (w_type == WIDGET5 and (orient == SLANT_LEFT or orient == HORIZONTAL))):
+        if cc % 2 == 0:
+            # even column - row decreases
+            occupied.append((cr - 1, cc - 1))
+        else:
+            # odd column - row stays the same
+            occupied.append((cr, cc - 1))
+
+    # cell in UP_RIGHT direction
+    if ((w_type == WIDGET3 and orient == SLANT_RIGHT) or
+            (w_type == WIDGET4 and orient == DOWN) or
+            (w_type == WIDGET5 and (orient == SLANT_RIGHT or orient == HORIZONTAL))):
+        if cc % 2 == 0:
+            # even column - row decreases
+            occupied.append((cr - 1, cc + 1))
+        else:
+            # odd column - row stays the same
+            occupied.append((cr, cc + 1))
+
+    # cell in DOWN_LEFT direction
+    if ((w_type == WIDGET3 and orient == SLANT_RIGHT) or
+            (w_type == WIDGET4 and orient == UP) or
+            (w_type == WIDGET5 and (orient == SLANT_RIGHT or orient == HORIZONTAL))):
+        if cc % 2 == 0:
+            # even column - row stays the same
+            occupied.append((cr, cc - 1))
+        else:
+            # odd column - row increases
+            occupied.append((cr + 1, cc - 1))
+
+    # cell in DOWN_RIGHT direction
+    if ((w_type == WIDGET3 and orient == SLANT_LEFT) or
+            (w_type == WIDGET4 and orient == UP) or
+            (w_type == WIDGET5 and (orient == SLANT_LEFT or orient == HORIZONTAL))):
+        if cc % 2 == 0:
+            # even column - row stays the same
+            occupied.append((cr, cc + 1))
+        else:
+            # odd column - row increases
+            occupied.append((cr + 1, cc + 1))
+
+    return occupied
