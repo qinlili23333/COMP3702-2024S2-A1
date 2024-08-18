@@ -40,7 +40,7 @@ class Solver:
         heapq.heapify(queue)
         while len(queue):
             cost, history_actions, state = heapq.heappop(queue)
-            if state.widget_centres[0] in self.environment.target_list and self.environment.is_solved(state):
+            if cached_solved(self.environment,state.widget_centres,state.widget_orients):
                 return history_actions
             # Check visited & cost check
             if visited.get(state):
@@ -93,7 +93,7 @@ class Solver:
         heapq.heapify(queue)
         while len(queue):
             totalcost,history_actions,cost, state = heapq.heappop(queue)
-            if state.widget_centres[0] in self.environment.target_list and self.environment.is_solved(state):
+            if cached_solved(self.environment,state.widget_centres,state.widget_orients):
                 return history_actions
             # Check visited & cost check
             if visited.get(state):
@@ -124,3 +124,21 @@ def cached_heuristic(environment,widget_centres,BEE_posit):
     for wd in widget_centres:
         value += math.dist(wd,BEE_posit)
     return value
+
+@functools.cache
+def cached_solved(environment,widget_centres,widget_orients):
+    if widget_centres[0] not in environment.target_list:
+        return False
+    widget_cells = [widget_get_occupied_cells(environment.widget_types[i], widget_centres[i],
+                                                widget_orients[i]) for i in range(environment.n_widgets)]
+    env_solved = True
+    for tgt in environment.target_list:
+        tgt_solved = False
+        for i in range(environment.n_widgets):
+            if tgt in widget_cells[i]:
+                tgt_solved = True
+                break
+        if not tgt_solved:
+            env_solved = False
+            break
+    return env_solved
