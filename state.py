@@ -70,15 +70,11 @@ class State:
                      force_valid=self.force_valid)
     
     def get_successor(self):
-        """
-        Get all successors of the current state
-        :return: a list of successor states
-        """
         successors = []
         for action in BEE_ACTIONS:
             new_state = self.environment.perform_action(self, action)
             if(new_state[0]):
-                successors.append(new_state+(action,))
+                successors.append((new_state,action))
         return successors
 
 
